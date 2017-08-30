@@ -96,7 +96,7 @@ module SchemaBuilder
           # add actions as hash
           unless out[ reqs[:controller] ].detect{ |i| i[:rel] == reqs[:action] }
             link = {:rel => reqs[:action],
-                    :method=> route.verb.source.gsub(/[$^]/, ''),
+                    :method=> route.verb.gsub(/[$^]/, ''),
                     :href => route.path.spec.to_s.gsub(/\(\.:format\)/, '').gsub(/:id/, '{id}')
                     }
             out[reqs[:controller]] << link
