@@ -40,22 +40,24 @@ module SchemaBuilder
         obj['name'] = model.name.underscore
         obj['title'] = model.model_name.human
         props = {}
-        model.columns_hash.each do |name, col|
-          prop = {}
-          prop['description'] = 'the field description'
-          prop['identity'] = true if model.primary_key.to_s == name
-          set_readonly(name,prop)
-          set_type(col.type, prop)
-          set_format(col.type, prop)
-          prop['default'] = col.default if col.default
-          prop['maxlength'] = col.limit if col.type == :string && col.limit
-          props["#{name}"] = prop
-        end
-        obj['properties'] = props
-        out << obj
-        #add links
-        if links = links_as_hash[model.name.tableize]
-          obj['links'] = links
+        if model != ApplicationRecord
+          model.columns_hash.each do |name, col|
+            prop = {}
+            prop['description'] = 'the field description'
+            prop['identity'] = true if model.primary_key.to_s == name
+            set_readonly(name,prop)
+            set_type(col.type, prop)
+            set_format(col.type, prop)
+            prop['default'] = col.default if col.default
+            prop['maxlength'] = col.limit if col.type == :string && col.limit
+            props["#{name}"] = prop
+          end
+          obj['properties'] = props
+          out << obj
+          #add links
+          if links = links_as_hash[model.name.tableize]
+            obj['links'] = links
+          end
         end
       end # models
       out
