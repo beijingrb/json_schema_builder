@@ -14,16 +14,10 @@ module SchemaBuilder
     def write
       out = {:new => [], :old => [] }
       create_out_path
-      models_as_hash.each do |model|
+      models_as_hash.each do |model, ui_model|
+        p ui_model
         FileUtils.mkdir_p("#{out_path}/#{model['name']}")
-        file = File.join( "#{out_path}/#{model['name']}", "schema.json")
-        if File.exist? file
-          out[:old] << file
-        else
-          FileUtils.mkdir_p(File.dirname(file))
-          File.open( file, 'w+' ) {|f| f.write(JSON.pretty_generate(model)) }
-          out[:new] << file
-        end
+        build_files(out, model, ui_model)
       end
       unless out[:old].empty?
         puts "== Existing Files ==\n"
@@ -41,20 +35,23 @@ module SchemaBuilder
         obj['name'] = model.name.underscore
         obj['title'] = model.model_name.human
         props = {}
-        if model != ApplicationRecord
+        fields = {}
+        if model != ActiveRecord
           model.columns_hash.each do |name, col|
             prop = {}
             prop['description'] = 'the field description'
-            prop['identity'] = true if model.primary_key.to_s == name
-            set_readonly(name,prop)
-            set_type(col.type, prop)
-            set_format(col.type, prop)
+            # prop['identity'] = true if model.primary_key.to_s == name
+            # set_readonly(name,prop)
+            # set_type(col.type, prop)
+            # set_format(col.type, prop)
             prop['default'] = col.default if col.default
             prop['maxlength'] = col.limit if col.type == :string && col.limit
             props["#{name}"] = prop
+            fields["#{name}"] = {}
+            set_readonly(name, fields["#{name}"])
           end
           obj['properties'] = props
-          out << obj
+          out.push([obj, fields])
           #add links
           if links = links_as_hash[model.name.tableize]
             obj['links'] = links
@@ -162,6 +159,13 @@ module SchemaBuilder
       @base_path = path
     end
 
+    def build_files(out, model, ui_model)
+      schema_file = File.join( "#{out_path}/#{model['name']}", "schema.json")
+      ui_schema_file = File.join( "#{out_path}/#{model['name']}", "ui_schema.json")
+      build_file(schema_file, out, model, JSON.pretty_generate(model))
+      build_file(ui_schema_file, out, model, JSON.pretty_generate(ui_model))
+    end
+
     private
 
     # Set the type of the field property
@@ -199,7 +203,17 @@ module SchemaBuilder
     # @param [String] col_name derived from ActiveRecord model
     # @param [Hash{String=>String}] hsh with field properties
     def set_readonly(col_name, hsh)
-      hsh['readonly'] = true if ['created_at', 'updated_at', 'id'].include?(col_name)
+      hsh['ui:readonly'] = true if ['created_at', 'updated_at', 'id'].include?(col_name)
+    end
+
+    def build_file(file, out, model, contents)
+      if File.exist? file
+        out[:old] << file
+      else
+        FileUtils.mkdir_p(File.dirname(file))
+        File.open( file, 'w+' ) {|f| f.write(contents) }
+        out[:new] << file
+      end
     end
   end
 end
