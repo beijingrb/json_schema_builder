@@ -15,7 +15,6 @@ module SchemaBuilder
       out = {:new => [], :old => [] }
       create_out_path
       models_as_hash.each do |model, ui_model|
-        p ui_model
         FileUtils.mkdir_p("#{out_path}/#{model['name']}")
         build_files(out, model, ui_model)
       end
@@ -36,7 +35,7 @@ module SchemaBuilder
         obj['title'] = model.model_name.human
         props = {}
         fields = {}
-        if model != ActiveRecord
+        if model != ActiveRecord || model != ApplicationRecord
           model.columns_hash.each do |name, col|
             prop = {}
             prop['description'] = 'the field description'
