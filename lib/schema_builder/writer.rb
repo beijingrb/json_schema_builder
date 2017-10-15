@@ -15,7 +15,8 @@ module SchemaBuilder
       out = {:new => [], :old => [] }
       create_out_path
       models_as_hash.each do |model|
-        file = File.join( out_path, "#{model['name']}.json")
+        FileUtils.mkdir_p("#{out_path}/#{model['name']}")
+        file = File.join( "#{out_path}/#{model['name']}", "schema.json")
         if File.exist? file
           out[:old] << file
         else
