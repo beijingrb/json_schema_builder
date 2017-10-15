@@ -35,7 +35,7 @@ module SchemaBuilder
         obj['title'] = model.model_name.human
         props = {}
         fields = {}
-        if model != ActiveRecord || model != ApplicationRecord
+        if model != ApplicationRecord
           model.columns_hash.each do |name, col|
             prop = {}
             prop['description'] = 'the field description'
