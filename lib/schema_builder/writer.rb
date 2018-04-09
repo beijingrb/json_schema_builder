@@ -30,31 +30,30 @@ module SchemaBuilder
     def models_as_hash
       out = []
       models.each do |model|
+        next if model == ApplicationRecord
         obj = schema_template
         obj['name'] = model.name.underscore
-        obj['title'] = model.model_name.human
+        obj['title'] = obj['description'] = model.model_name.human
         props = {}
         fields = {}
-        if model != ApplicationRecord
-          model.columns_hash.each do |name, col|
-            prop = {}
-            prop['description'] = 'the field description'
-            # prop['identity'] = true if model.primary_key.to_s == name
-            # set_readonly(name,prop)
-            set_type(col.type, prop)
-            set_format(col.type, prop)
-            prop['default'] = col.default if col.default
-            prop['maxlength'] = col.limit if col.type == :string && col.limit
-            props["#{name}"] = prop
-            fields["#{name}"] = {}
-            set_readonly(name, fields["#{name}"])
+        model.columns_hash.each do |name, col|
+          prop = {}
+          set_type(col.type, prop)
+          set_format(col.type, prop)
+          prop['default'] = col.default if col.default
+          prop['maxlength'] = col.limit if col.type == :string && col.limit
+          props["#{name}"] = prop
+          fields["#{name}"] = {}
+          set_readonly(name, fields["#{name}"])
+          if col.null == false && !['created_at', 'updated_at', 'id'].include?(name)
+            obj['required'].push(name)
           end
-          obj['properties'] = props
-          out.push([obj, fields])
-          #add links
-          if links = links_as_hash[model.name.tableize]
-            obj['links'] = links
-          end
+        end
+        obj['properties'] = props
+        out.push([obj, fields])
+        #add links
+        if links = links_as_hash[model.name.tableize]
+          obj['links'] = links
         end
       end # models
       out
@@ -112,6 +111,7 @@ module SchemaBuilder
       hsh['title'] = ''
       hsh['description'] = 'object'
       hsh['properties'] = {}
+      hsh['required'] = []
       hsh['links'] = []
       hsh
     end
