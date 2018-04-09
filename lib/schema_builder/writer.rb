@@ -42,7 +42,7 @@ module SchemaBuilder
             # prop['identity'] = true if model.primary_key.to_s == name
             # set_readonly(name,prop)
             set_type(col.type, prop)
-            # set_format(col.type, prop)
+            set_format(col.type, prop)
             prop['default'] = col.default if col.default
             prop['maxlength'] = col.limit if col.type == :string && col.limit
             props["#{name}"] = prop
